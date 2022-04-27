@@ -1,0 +1,8 @@
+<launch>
+
+
+	<node pkg="turtlesim" type="turtlesim_node" name="turtlesim_node" />
+	
+	<node pkg="realtime_embedded_class" type="lab1_2" name="lab1_2" output="screen" />
+	
+</launch>
