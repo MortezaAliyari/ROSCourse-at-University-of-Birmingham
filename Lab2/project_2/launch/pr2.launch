@@ -1,0 +1,7 @@
+<launch>
+
+<node pkg="project_2" name="services" type="services.py" output="screen"/>
+<node pkg="wheeled_robot_kinematics" name="kinematics_test" type="kinematics_test.py" output="screen" />
+
+</launch>
+
