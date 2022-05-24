@@ -31,6 +31,7 @@ class MapMaker:
     self.numScansReceived = 0
 
     # Insert additional code here if needed
+    self.process_odom_flag = 0
 
   # ----------------------------------------------------------------------------
   # Convert from world coordinates to grid coordinates. This is convenience 
@@ -52,13 +53,79 @@ class MapMaker:
   # Process odometry message. You code should go here.
   def process_odom(self, msg):
 
-    None
+    position = msg.pose.pose.position
+    self.x_now = position.x
+    self.y_now = position.y
 
+    orientation = msg.pose.pose.orientation
+    orientation = (orientation.x, orientation.y, orientation.z, orientation.w)
+    self.theta_now = euler_from_quaternion(orientation)[2]
+
+    # print "-------------------------------------------------------------------------"
+    # print "process_odom"
+    # print self.theta_now
+
+    self.process_odom_flag = 1
+
+    None
   # ----------------------------------------------------------------------------
   # Process laserscan message. You code should go here.
   def process_scan(self, msg):
 
     self.numScansReceived+=1
+    print (self.numScansReceived)
+
+    i = 0
+    rays = []
+    free_cells = []
+    occupied_cells = []
+
+    if self.process_odom_flag ==1:
+      for range_value in msg.ranges:
+
+        angle_to_robot_frame = msg.angle_min + ( i * msg.angle_increment )
+
+        # # Now convert the point to world coordinate system
+        x_world = range_value * math.cos(angle_to_robot_frame+self.theta_now) + self.x_now
+        y_world = range_value * math.sin(angle_to_robot_frame+self.theta_now) + self.y_now
+        # Ray is from robot position to range_value
+        rays.append( (x_world,y_world) )
+
+        # Convert points to grid cells
+        try:
+          (gx_1,gy_1) = self.to_grid(self.x_now, self.y_now)
+          (gx_2,gy_2) = self.to_grid(x_world, y_world)
+          grid_go_ahead = 1
+        except Exception as e:
+          print ('oops', Exception) 
+          grid_go_ahead = 0
+        
+        if grid_go_ahead == 1:
+          # Set of points on the ray
+          points_on_ray = bresenham(gx_1, gy_1, gx_2, gy_2)
+
+          for j in range(len(points_on_ray)):
+
+            point_on_ray_x = points_on_ray[j][0]
+            point_on_ray_y = points_on_ray[j][1]
+
+            point_on_ray_index = to_index(point_on_ray_x, point_on_ray_y, self.size_x)
+
+            (point_on_ray_x_world, point_on_ray_y_world) = self.to_world(point_on_ray_x, point_on_ray_y)
+
+            # All points except last is free cell
+            if j < ( len(points_on_ray) - 1 ):
+              self.grid.data[point_on_ray_index] = 0
+            # Last point is occupied cell
+            if j == ( len(points_on_ray) - 1 ):
+              if range_value >= msg.range_max:
+                self.grid.data[point_on_ray_index] = 0
+              else:
+                self.grid.data[point_on_ray_index] = 100
+
+        i = i +1
+
+
 
     None        
 
@@ -156,4 +223,3 @@ class MapMaker:
   # Remove duplicate entries from a list
   def unique_list(self, list_in):
     return list(set(list_in))
-
