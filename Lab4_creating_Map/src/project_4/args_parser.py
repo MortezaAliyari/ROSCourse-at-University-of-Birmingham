@@ -26,7 +26,7 @@ def parse_args():
             args.laser_y_offset = 0.12
             args.laser_theta_offset = radians(45)
         else:
-            print "Invalid part number!"
+            print ("Invalid part number!")
             exit(0)
     
     size = int( args.dimension / args.resolution )
