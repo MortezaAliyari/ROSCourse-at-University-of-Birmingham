@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 from project_4.map_maker import *
 from sensor_msgs.msg import LaserScan
